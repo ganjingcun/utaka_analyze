@@ -1,0 +1,65 @@
+version: "2"
+services:
+  app:
+    restart: always
+    build: .
+    hostname: "{{.Service.Name}}-{{.Task.Slot}}"
+    ports:
+      - 3000:3000
+    volumes:
+      - "${project_dir}:/usr/src/app"
+    networks:
+      overlay:
+
+  influxdb:
+    restart: always
+    image: influxdb
+    hostname: "{{.Service.Name}}-{{.Task.Slot}}"
+    ports:
+      - 8086:8086
+      - 8083:8083
+    volumes:
+      - ~/docker-volumes/influxdb:/var/lib/influxdb
+    networks:
+      overlay:
+        aliases:
+          - influxdb
+  grafana:
+    restart: always
+    image: grafana/grafana
+    hostname: "{{.Service.Name}}-{{.Task.Slot}}"
+    ports:
+      - 13000:3000
+    networks:
+      overlay:
+        aliases:
+          - grafana
+    environment:
+      - "GF_SECURITY_ADMIN_PASSWORD=abcd1234"
+    volumes:
+      - grafana-var:/var/lib/grafana
+      - grafana-etc:/etc/grafana
+  mysql:
+    restart: always
+    image: mysql:5.7.21
+    hostname: "{{.Service.Name}}-{{.Task.Slot}}"
+    ports:
+      - 3306:3306
+    networks:
+      overlay:
+        aliases:
+          - mysql
+    environment:
+      - "MYSQL_ROOT_PASSWORD=root"
+    volumes:
+      - ~/docker-volumes/mysql:/var/lib/mysql
+
+networks:
+  overlay:
+volumes:
+  grafana-var:
+  grafana-etc:
+
+
+
+
