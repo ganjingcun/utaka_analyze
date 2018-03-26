@@ -18,7 +18,7 @@ var addresses = {
     ethfans: [
         '0x78f596d47a1afd37c1c4a3c4b0c67e2deec54533',
         '0xd39accf82394fcb73cff0c9b1a4fcdb9d31095d2',
-        '0xdea727cc7E2e290212F5b6fA03E06Cd854F17c09',
+        '0xdea727cc7e2e290212f5b6fa03e06cd854f17c09',
         '0x98a82849237047294d1503d286310c0468a83c36'
     ],
     dwarfpool: [

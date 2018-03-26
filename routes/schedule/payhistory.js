@@ -16,6 +16,10 @@ var superagent = require('superagent');
 
 var mysql = require('mysql');  //调用MySQL模块
 
+var log4js = require('log4js');
+var logger = log4js.getLogger("history");
+logger.level = 'debug';
+
 //创建mysql连接池
 var pool = mysql.createPool({
     host: 'mysql',
@@ -40,25 +44,25 @@ var schedule = require('node-schedule');
 
 //b网支付记录
 schedule.scheduleJob('1 1 * * * *', function () {
-    console.log('The bw pay histoty scheduleJob run', moment().format('YYYY-MM-DD HH:mm:ss'));
+    logger.info('The bw pay histoty scheduleJob run', moment().format('YYYY-MM-DD HH:mm:ss'));
     fetchBWHistory();
 });
 
 //星火支付记录
 schedule.scheduleJob('1 3 * * * *', function () {
-    console.log('The ethfans pay histoty scheduleJob run', moment().format('YYYY-MM-DD HH:mm:ss'));
+    logger.info('The ethfans pay histoty scheduleJob run', moment().format('YYYY-MM-DD HH:mm:ss'));
     fetchETHFANSHistory();
 });
 
 //btc.com支付历史
 schedule.scheduleJob('1 5 * * * *', function () {
-    console.log('The btc.com pay histoty scheduleJob run', moment().format('YYYY-MM-DD HH:mm:ss'));
+    logger.info('The btc.com pay histoty scheduleJob run', moment().format('YYYY-MM-DD HH:mm:ss'));
     fetchBTCHistory();
 });
 
 //鱼池支付历史
 schedule.scheduleJob('1 7 * * * *', function () {
-    console.log('The fish pay histoty scheduleJob run', moment().format('YYYY-MM-DD HH:mm:ss'));
+    logger.info('The fish pay histoty scheduleJob run', moment().format('YYYY-MM-DD HH:mm:ss'));
     fetchFishHistory();
 });
 
@@ -70,7 +74,7 @@ function fetchBWHistory() {
         superagent.get(fetchUrl).end(function (err, sres) {
             // 常规的错误处理
             if (err) {
-                console.error(err)
+                logger.error(err)
                 return;
             }
 
@@ -107,7 +111,7 @@ function fetchETHFANSHistory() {
         superagent.get(fetchUrl).end(function (err, sres) {
             // 常规的错误处理
             if (err) {
-                console.error(err)
+                logger.error(err)
                 return;
             }
 
@@ -138,7 +142,7 @@ function fetchBTCHistory() {
         superagent.get(fetchUrl).end(function (err, sres) {
             // 常规的错误处理
             if (err) {
-                console.error(err)
+                logger.error(err)
                 return;
             }
 

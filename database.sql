@@ -17,3 +17,7 @@ insert into pay_history values(null, now(), 'fish_xx','fish', 'xx', 12);
 
 
 select count(*), metric  from pay_history group by metric ;
+
+DROP SERIES FROM miner_status WHERE address='r_MeI2MiNckImjC'
+
+DROP SERIES FROM miner_status WHERE address='0xdea727cc7E2e290212F5b6fA03E06Cd854F17c09'

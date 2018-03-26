@@ -14,6 +14,11 @@ var Influx = require('influx')
 var moment = require('moment');
 var cheerio = require('cheerio');
 var superagent = require('superagent');
+var jjrobot = require('../../utils/jjrobot')(this);
+
+var log4js = require('log4js');
+var logger = log4js.getLogger("job");
+logger.level = 'debug';
 
 const influx = new Influx.InfluxDB({
     host: 'influxdb',
@@ -49,7 +54,7 @@ influx.getDatabaseNames()
 
     })
     .catch(err => {
-        console.error(`Error creating Influx database!`);
+        logger.error(`Error creating Influx database!`);
     })
 
 /**
@@ -94,7 +99,7 @@ schedule.scheduleJob('*/30 * * * * *', function () {
 function fetchFishPoolData() {
 
     _.each(addresses.fish, function (address) {
-        console.log(`The fish pool ${address} scheduleJob run`, moment().format('YYYY-MM-DD HH:mm:ss'));
+        logger.info(`The fish pool ${address} scheduleJob run`, moment().format('YYYY-MM-DD HH:mm:ss'));
         async.waterfall([
             function (callback) {
                 var helpUrl = "https://www.f2pool.com/help"
@@ -104,11 +109,16 @@ function fetchFishPoolData() {
                         return callback(err);;
                     }
                     var $ = cheerio.load(sres.text);
-                    var trs = $('#miner-overview tbody tr');
+                    var tbodys = $('tbody');
+                    var trs = $(tbodys[3]).find("tr");
                     var tds = $(trs[4]).find("td");
-                    var html = $(tds[4]).text();
+                    var html = $(tds[0]).text();
                     var strs = html.split(" ");
-                    callback(null, strs[0]);
+                    if (isNaN(strs[0])) {
+                        callback(null, "0");
+                    } else {
+                        callback(null, strs[0]);
+                    }
                 });
             },
 
@@ -149,22 +159,22 @@ function fetchFishPoolData() {
                     })
 
                     result.total = worker_length;
+                    result.online = worker_length_online + "";
+                    result.offline = worker_length - worker_length_online;
 
                     //是否需要翻页
                     if (obj.workers && obj.workers.length < worker_length) {
                         var start_worker = obj.workers[obj.workers.length - 1];
+
                         apiUrl = apiUrl + "?start_worker=" + start_worker[0];
 
-                        superagent.get(apiUrl).end(function (err, sres) {
+                        superagent.get(apiUrl).end(function (err, sres2) {
                             // 常规的错误处理
                             if (err) {
                                 return callback(err);
                             }
 
-                            var obj = sres.body;
-                            var worker_length = obj.worker_length; //实际总量
-                            var worker_length_online = obj.worker_length_online; //在线
-                            _.each(obj.workers, function (worker) {
+                            _.each(sres2.body.workers, function (worker) {
                                 var name = worker[0];
                                 var lasttime = worker[6];
                                 var lastCommit = moment(lasttime).format('YYYY-MM-DD HH:mm:ss');
@@ -177,6 +187,7 @@ function fetchFishPoolData() {
                                     })
                                 }
                             })
+
                             result.offlines = offlines;
                             callback(null, result);
                         });
@@ -201,7 +212,7 @@ function fetchFishPoolData() {
 function fetchEthfansPoolData() {
 
     _.each(addresses.ethfans, function (address) {
-        console.log(`The ethfans pool ${address} scheduleJob run`, moment().format('YYYY-MM-DD HH:mm:ss'));
+        logger.info(`The ethfans pool ${address} scheduleJob run`, moment().format('YYYY-MM-DD HH:mm:ss'));
 
         async.waterfall([
             function (callback) {
@@ -220,12 +231,12 @@ function fetchEthfansPoolData() {
             function (ethValue, callback) {
 
                 var fetchUrl = `https://eth.ethfans.org/api/page/miner?value=${address.slice(2)}`
-                console.log(fetchUrl);
+
                 superagent.get(fetchUrl)
                     .end(function (err, sres) {
                         // 常规的错误处理
                         if (err) {
-                            console.error(err)
+                            logger.error(err)
                             return callback(err);
                         }
                         var obj = sres.body;
@@ -269,7 +280,7 @@ function fetchEthfansPoolData() {
 
 function fetchBwPoolData() {
     _.each(addresses.bw, function (address) {
-        console.log(`The bw pool ${address} scheduleJob run`, moment().format('YYYY-MM-DD HH:mm:ss'));
+        logger.info(`The bw pool ${address} scheduleJob run`, moment().format('YYYY-MM-DD HH:mm:ss'));
 
         async.waterfall([
             function (callback) {
@@ -297,7 +308,7 @@ function fetchBwPoolData() {
                     .end(function (err, sres) {
                         // 常规的错误处理
                         if (err) {
-                            console.error(err)
+                            logger.error(err)
                             return;
                         }
 
@@ -353,10 +364,10 @@ function fetchBwPoolData() {
 function fetchDwarfPoolData() {
 
     _.each(addresses.dwarfpool, function (address) {
-        console.log(`The dwarfpool ${address} scheduleJob run`, moment().format('YYYY-MM-DD HH:mm:ss'));
+        logger.info(`The dwarfpool ${address} scheduleJob run`, moment().format('YYYY-MM-DD HH:mm:ss'));
 
         async.waterfall([
-            
+
             function (callback) {
                 var helpUrl = `http://dwarfpool.com/eth/api?wallet=${address}`;
                 superagent.get(helpUrl).end(function (err, sres) {
@@ -371,7 +382,7 @@ function fetchDwarfPoolData() {
                     result.address = address;
 
                     var obj = sres.body;
-                    var ethValue = obj.earning_24_hours;
+                    var ethValue = obj.earning_24_hours === "?" ? 0 : obj.earning_24_hours;
                     var workers = obj.workers;
                     var totalWork = 0;
                     _.each(workers, function (work) {
@@ -410,7 +421,7 @@ function fetchDwarfPoolData() {
 function fetchBTCPoolData() {
 
     _.each(addresses.btc, function (address) {
-        console.log(`The btccom ${address} scheduleJob run`, moment().format('YYYY-MM-DD HH:mm:ss'));
+        logger.info(`The btccom ${address} scheduleJob run`, moment().format('YYYY-MM-DD HH:mm:ss'));
 
         async.waterfall([
             function (callback) {
@@ -425,11 +436,22 @@ function fetchBTCPoolData() {
                     var btc = sres.body.data.btc;
                     var ethValue = btc.income_coin.toFixed(12);
                     callback(null, ethValue);
-
                 });
             },
 
             function (ethValue, callback) {
+                var helpUrl = `https://cn-pool.api.btc.com/v1/realtime/hashrate?worker_id=0&access_key=${address}&puid=71095&lang=zh-cn`
+                superagent.get(helpUrl).end(function (err, sres) {
+                    // 常规的错误处理
+                    if (err) {
+                        return callback(err);
+                    }
+
+                    callback(null, ethValue, sres.body.data)
+                });
+            },
+
+            function (ethValue, shares, callback) {
                 var helpUrl = `https://cn-pool.api.btc.com/v1/worker/?group=0&page=1&page_size=50&status=all&order_by=worker_name&asc=1&filter=&access_key=${address}&puid=71095&lang=zh-cn`
                 superagent.get(helpUrl).end(function (err, sres) {
                     // 常规的错误处理
@@ -461,6 +483,11 @@ function fetchBTCPoolData() {
 
                     }, function (err) {
 
+                        if (err) {
+                            logger.error(err);
+                            return callback(err, result)
+                        }
+
                         _.each(workers, function (work) {
                             if (work.status === "INACTIVE") {
                                 var lastCommit = moment(work.last_share_time * 1000).format('YYYY-MM-DD HH:mm:ss');
@@ -470,12 +497,12 @@ function fetchBTCPoolData() {
                                     since: moment(lastCommit).fromNow()
                                 })
                             }
-                            total += work.shares_1m - 0;
+                            total += work.shares_15m - 0;
                             totalAvg += work.shares_1d - 0;
                         })
 
-                        result.hashes_last_day = totalAvg;
-                        result.hashrate = total;
+                        result.hashes_last_day = shares.shares_1d;
+                        result.hashrate = shares.shares_15m;
                         result.ethValue = ethValue;
                         result.offlines = offlines;
                         result.total = workers.length;
@@ -491,16 +518,21 @@ function fetchBTCPoolData() {
     })
 }
 
+var jjrobotLimitMap = {};
 
 function writeDB(result) {
-    result.online = result.total - result.offlines.length;
-    result.offline = result.offlines.length;
+    if (!result.online) {
+        result.online = result.total - result.offlines.length;
+    }
+    if (!result.offline) {
+        result.offline = result.offlines.length;
+    }
+
     result.liverate = "0.00%"
-    if(result.online>0 && result.total>0){
+    if (result.online > 0 && result.total > 0) {
         result.liverate = (result.online / 1.0 / result.total * 100).toFixed(2) + "%";
     }
-    
-    console.log(result);
+
     // 把offlines转成字符串
     result.offlines = _.map(result.offlines, function (element) {
         return element.name + ", 上次提交: " + element.lastCommit + ", " + element.since;
@@ -517,12 +549,41 @@ function writeDB(result) {
                 offline: result.offline,
                 hashes_last_day: result.hashes_last_day,
                 hashrate: result.hashrate,
-                ethValue: result.ethValue
+                ethValue: result.ethValue || 0
             },
         }
     ]).catch(err => {
-        console.error(`Error saving data to InfluxDB! ${err.stack}`)
+        logger.error(`Error saving data to InfluxDB! ${err.stack}`)
     })
+
+    //jjrobot
+    if (result.offline > 0) {
+
+        var key = result.tag + "_" + result.address;
+
+        var text = key + "\n"
+            + "掉线数量" + result.offline + "\n"
+            + result.offlines.join("\n").slice(0, 800) + "...";
+
+        if (!jjrobotLimitMap[key]) {
+            sendJJ(text);
+            jjrobotLimitMap[key] = Date.now();
+        }
+
+        var diff = Date.now() - jjrobotLimitMap[key];
+        if ((diff >= 60 * 60 * 1000)) {
+            sendJJ(text);
+            jjrobotLimitMap[key] = Date.now();
+        }
+
+    }
+
+}
+
+function sendJJ(text) {
+    jjrobot.sendText(text);
 }
 
 module.exports = router;
+
+
