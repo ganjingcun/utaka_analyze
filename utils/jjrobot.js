@@ -20,6 +20,7 @@ function DTRobot (app) {
     }
   };
   this.dtrobot_webhook = 'https://oapi.dingtalk.com/robot/send?access_token=9af0ce951f9b374a779d206ae5c2d3265edf08dfc76f84020478298ccf3b7f74';
+  
 };
 
 DTRobot.prototype.send = function (msgObj, group) {
@@ -66,7 +67,7 @@ DTRobot.prototype.sendText = function (text, groupAt) {
     },
     at: {
       atMobiles: [
-        "13003958518"
+        // "13003958518"
       ],
       isAtAll: false
     }

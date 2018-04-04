@@ -5,7 +5,7 @@ var express = require('express');
 var router = express.Router();
 var os = require('os')
 
-require("./schedule/job")
+// require("./schedule/job")
 require("./schedule/payhistory")
 
 module.exports = router;

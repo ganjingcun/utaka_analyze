@@ -102,29 +102,31 @@ function fetchFishPoolData() {
         logger.info(`The fish pool ${address} scheduleJob run`, moment().format('YYYY-MM-DD HH:mm:ss'));
         async.waterfall([
             function (callback) {
-                var helpUrl = "https://www.f2pool.com/help"
-                superagent.get(helpUrl).end(function (err, sres) {
-                    // 常规的错误处理
-                    if (err) {
-                        return callback(err);;
-                    }
-                    var $ = cheerio.load(sres.text);
-                    var tbodys = $('tbody');
-                    var trs = $(tbodys[3]).find("tr");
-                    var tds = $(trs[4]).find("td");
-                    var html = $(tds[0]).text();
-                    var strs = html.split(" ");
-                    if (isNaN(strs[0])) {
-                        callback(null, "0");
-                    } else {
-                        callback(null, strs[0]);
-                    }
-                });
+                //暂时不可用
+                // var helpUrl = "https://www.f2pool.com/help"
+                // superagent.get(helpUrl).end(function (err, sres) {
+                //     // 常规的错误处理
+                //     if (err) {
+                //         return callback(err);;
+                //     }
+                //     var $ = cheerio.load(sres.text);
+                //     var tbodys = $('tbody');
+                //     var trs = $(tbodys[3]).find("tr");
+                //     var tds = $(trs[4]).find("td");
+                //     var html = $(tds[0]).text();
+                //     var strs = html.split(" ");
+                //     if (isNaN(strs[0])) {
+                //         callback(null, "0");
+                //     } else {
+                //         callback(null, strs[0]);
+                //     }
+                // });
+                callback(null, "0");
             },
 
             function (ethValue, callback) {
 
-                var apiUrl = `http://api.f2pool.com/eth/${address}`;
+                var apiUrl = `http://api.f2pool.com/eth/${address.toLowerCase()}`;
 
                 superagent.get(apiUrl).end(function (err, sres) {
                     // 常规的错误处理
@@ -138,7 +140,7 @@ function fetchFishPoolData() {
                     var offlines = [];
                     var obj = sres.body;
                     var worker_length = obj.worker_length; //实际总量
-                    var worker_length_online = obj.worker_length_online; //在线
+                    var worker_length_online = obj.worker_length_online || 0; //在线
                     var hashes_last_day = obj.hashes_last_day; //过去24小时算力
                     var hashrate = obj.hashrate; //当前算力
                     result.hashes_last_day = hashes_last_day;
@@ -230,7 +232,7 @@ function fetchEthfansPoolData() {
 
             function (ethValue, callback) {
 
-                var fetchUrl = `https://eth.ethfans.org/api/page/miner?value=${address.slice(2)}`
+                var fetchUrl = `https://eth.ethfans.org/api/page/miner?value=${address.slice(2).toLowerCase()}`
 
                 superagent.get(fetchUrl)
                     .end(function (err, sres) {
@@ -560,19 +562,27 @@ function writeDB(result) {
     if (result.offline > 0) {
 
         var key = result.tag + "_" + result.address;
+        var webHook = addresses.webhook[key];
+        var defaultWebHook = addresses.webhook["default"];
 
-        var text = key + "\n"
-            + "掉线数量" + result.offline + "\n"
-            + result.offlines.join("\n").slice(0, 800) + "...";
+        var name = addresses.alias[key] || key
+        var text = name + "\n"
+            + "掉线数量: " + result.offline + "\n";
 
         if (!jjrobotLimitMap[key]) {
-            sendJJ(text);
+            sendJJ(text, defaultWebHook);
+            if (webHook) {
+                sendJJ(text, webHook);
+            }
             jjrobotLimitMap[key] = Date.now();
         }
 
         var diff = Date.now() - jjrobotLimitMap[key];
         if ((diff >= 60 * 60 * 1000)) {
-            sendJJ(text);
+            sendJJ(text, defaultWebHook);
+            if (webHook) {
+                sendJJ(text, webHook);
+            }
             jjrobotLimitMap[key] = Date.now();
         }
 

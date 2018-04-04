@@ -213,6 +213,7 @@ function fetchFishHistory() {
 }
 
 function writeMysql(history) {
+    logger.info(history)
     pool.getConnection(function (err, connection) {
         async.each(history, function (row, callback) {
             var sql = `insert into pay_history values(null, '${row.time}', '${row.tag + '_' + row.address}','${row.tag}', '${row.address}', '${row.total}')`;
