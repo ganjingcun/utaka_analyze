@@ -590,8 +590,8 @@ function writeDB(result) {
 
 }
 
-function sendJJ(text) {
-    jjrobot.sendText(text);
+function sendJJ(text, webHook) {
+    jjrobot.sendText(text, webHook);
 }
 
 module.exports = router;

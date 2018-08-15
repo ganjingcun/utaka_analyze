@@ -26,7 +26,7 @@ services:
           - influxdb
   grafana:
     restart: always
-    image: grafana/grafana
+    image: grafana/grafana:5.0.3
     hostname: "{{.Service.Name}}-{{.Task.Slot}}"
     ports:
       - 13000:3000

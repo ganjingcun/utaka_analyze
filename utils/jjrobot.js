@@ -23,8 +23,8 @@ function DTRobot (app) {
   
 };
 
-DTRobot.prototype.send = function (msgObj, group) {
-  var urlObj = url.parse(this.dtrobot_webhook);
+DTRobot.prototype.send = function (msgObj, webhook) {
+  var urlObj = url.parse(webhook);
   var respJson = '';
   var reqObj = {
     protocol: urlObj.protocol,
@@ -59,7 +59,7 @@ DTRobot.prototype.send = function (msgObj, group) {
  * @param text text message for robot to send
  * @param groupAt group to at, group name or all
  */
-DTRobot.prototype.sendText = function (text, groupAt) {
+DTRobot.prototype.sendText = function (text, webhook) {
   this.send({
     msgtype: "text",
     text: {
@@ -71,7 +71,7 @@ DTRobot.prototype.sendText = function (text, groupAt) {
       ],
       isAtAll: false
     }
-  });
+  },webhook);
 };
 
 DTRobot.prototype.sendLink = function (title, text, msgUrl, picUrl, groupAt) {
